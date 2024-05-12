@@ -1,0 +1,7 @@
+torch
+faiss-cpu
+transformers
+arxiv
+requests
+openai==0.28
+thread6

@@ -33,3 +33,10 @@ saved_model/**/* filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.zst filter=lfs diff=lfs merge=lfs -text
 *tfevents* filter=lfs diff=lfs merge=lfs -text
+dataset/ filter=lfs diff=lfs merge=lfs -text
+dataset/feedback.json filter=lfs diff=lfs merge=lfs -text
+dataset/paper_embedding.pkl filter=lfs diff=lfs merge=lfs -text
+dataset/paper.json filter=lfs diff=lfs merge=lfs -text
+dataset/thought_embedding.pkl filter=lfs diff=lfs merge=lfs -text
+dataset/thought.json filter=lfs diff=lfs merge=lfs -text
+images/arxiv_copilot.PNG filter=lfs diff=lfs merge=lfs -text

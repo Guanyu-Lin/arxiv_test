@@ -143,9 +143,9 @@ with gr.Blocks(css="""#chat_container {height: 820px; width: 1000px; margin-left
                 papers_text = gr.Textbox(label="Trend Papers", interactive=False, scale=8, lines=5, max_lines=5)
 
             with gr.Row():
-                topic_text = gr.Textbox(label="Topic Trend", interactive=False, scale=5, lines=7, max_lines=10)
+                topic_text = gr.Textbox(label="Topic Trend", interactive=False, scale=5, lines=12, max_lines=15)
 
-                ideas_text = gr.Textbox(label="Ideas Related to Topic Trend", interactive=False, scale=5, lines=7, max_lines=10)
+                ideas_text = gr.Textbox(label="Ideas Related to Topic Trend", interactive=False, scale=5, lines=12, max_lines=15)
 
         date_button.click(confirm_date, inputs=[date_choice, profile_text], outputs=[topic_text, papers_text, ideas_text])
 

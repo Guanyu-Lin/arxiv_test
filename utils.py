@@ -182,20 +182,20 @@ def summarize_research_field(profile, keywords, dataset,data_embedding):
     input = {}
     if profile is None: 
         prompt_qa = (
-        "Given the keywords, some recent paper titles and abstracts. Could you summarize no more than 10 top keywords of high level research backgounds and trends in this field."
-        "Here are the keywords: {keywords}"
+        "Given some recent paper titles and abstracts. Could you summarize no more than 10 top keywords of high level research backgounds and trends."
+        # "Here are the keywords: {keywords}"
         "Here are the retrieved paper abstracts: {papers}"
         )
         query_format = (
         "Given the keywords, retrieve some recent paper titles and abstracts can represent research trends in this field."
         "Here are the keywords: {keywords}"
         )
-        input['keywords'] = keywords
+        # input['keywords'] = keywords
         query_input['keywords'] = keywords
     else:
         prompt_qa = (
-        "Given the profile of me, some recent paper titles and abstracts. Could you summarize no more than 10 top keywords of high level research backgounds and trends in this field (related to my profile)."
-        "Here is my profile: {profile}"
+        "Given some recent paper titles and abstracts. Could you summarize no more than 10 top keywords of high level research backgounds and trends."
+        # "Here is my profile: {profile}"
         # "Here are the keywords: {keywords}"
         "Here are the retrieved paper abstracts: {papers}"
         )
@@ -204,7 +204,6 @@ def summarize_research_field(profile, keywords, dataset,data_embedding):
         "Here is my profile: {profile}"
         # "Here are the keywords: {keywords}"
         )
-        input['profile'] = profile
         query_input['profile'] = profile
         # import pdb
         # pdb.set_trace()

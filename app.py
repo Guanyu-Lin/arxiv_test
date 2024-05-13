@@ -119,9 +119,9 @@ with gr.Blocks(css="""#chat_container {height: 820px; width: 1000px; margin-left
         )
         with gr.Row():
             with gr.Column(scale=2, min_width=300):
-                name_input = gr.Textbox(label="Input Your Name")
+                name_input = gr.Textbox(label="Input your name:")
                 set_button = gr.Button("Set Profile")
-            profile_text = gr.Textbox(label="Generated Profile", interactive=True, scale=7, lines=5, max_lines=5)
+            profile_text = gr.Textbox(label="Generated profile (can be edited):", interactive=True, scale=7, lines=5, max_lines=5)
             edit_button = gr.Button("Edit Profile", scale=1)
         set_button.click(set_profile, inputs=name_input, outputs=[profile_text])
         edit_button.click(edit_profile, inputs=[profile_text, name_input], outputs=[profile_text])
@@ -191,7 +191,7 @@ with gr.Blocks(css="""#chat_container {height: 820px; width: 1000px; margin-left
 
 
         with gr.Row():
-            comment_input = gr.Textbox(label="With Arxiv Copilot, how much time do you save to obtain the same amount of information?", scale=9, lines=3)
+            comment_input = gr.Textbox(label="With Arxiv Copilot, how many minutes do you save to obtain the same amount of information?", scale=9, lines=3)
             comment_button = gr.Button(value="Comment", scale=1)
 
 

@@ -110,8 +110,21 @@ def dailyDownload(agent_ls):
         agent.paper_embedding = update_paper_file
         print("Today is " + agent.newest_day.strftime("%m/%d/%Y"))
 
+def dailySave(agent_ls):
+    agent = agent_ls[0]
+    while True:
+        time.sleep(DAY_TIME)
+        with open(agent.trend_idea_path, "w") as f_:
+            json.dump(agent.trend_idea, f_)
+            
+        with open(agent.thought_path, "w") as f_:
+            json.dump(agent.thought, f_)
 
-
+        with open(agent.thought_embedding_path, "wb") as f:
+            pickle.dump(agent.thought_embedding, f)
+            
+        with open(agent.profile_path,"w") as f:
+            json.dump(agent.profile,f)
 
 
 class ArxivAgent:
@@ -119,6 +132,8 @@ class ArxivAgent:
         
         self.dataset_path = "./dataset/paper.json"
         self.thought_path = "./dataset/thought.json"
+        self.trend_idea_path = "./dataset/trend_idea.json"
+        self.profile_path = "./dataset/profile.json"
 
         self.embedding_path = "./dataset/paper_embedding.pkl"
         self.thought_embedding_path = './dataset/thought_embedding.pkl'
@@ -127,30 +142,24 @@ class ArxivAgent:
         self.today = datetime.datetime.now().strftime("%m/%d/%Y")
 
         self.newest_day = ""
-        self.load_thought()
-        self.load_feedback()
+        self.load_cache()
+
         self.download()
         try:
             thread6.run_threaded(dailyDownload, [self])
-            # thread6.start_new_thread( print_time, ["Thread-2", 4] )
+            thread6.run_threaded(dailySave, [self])
         except:
             print("Error: unable to start thread")
-        # self.paper = self.download()
-        # self.paper_by_date = self.paper
+
     def edit_profile(self, profile, author_name):
-        profile = profile
-        filename = 'dataset/profile.json'
-        with open(filename, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-        data[author_name]=profile
-        with open(filename, "w") as f:
-            json.dump(data, f)
+
+        self.profile[author_name]=profile
+
         return "Successfully edit profile!"
     
     def get_profile(self, author_name):
         if author_name == "": return None
-        # import pdb
-        # pdb.set_trace()
+
         profile = self.get_arxiv_data_by_author(author_name)
         return profile
     def select_date(self, method, profile_input):
@@ -186,16 +195,40 @@ class ArxivAgent:
         data_chunk_embedding=chunk_embedding_date
         profile = profile_input
 
-        # trend, paper_link = summarize_research_field(profile, "Machine Learning", dataset) # trend
-        trend, paper_link = summarize_research_field(profile, "Machine Learning", dataset,data_chunk_embedding) # trend
+        key_update = list(self.paper.keys())[-1]
+        isQuery = False
+        if profile in self.trend_idea:
+            if key_update in self.trend_idea[profile]:
+                if method in self.trend_idea[profile][key_update]:
+                    trend = self.trend_idea[profile][key_update][method]["trend"]
+                    reference = self.trend_idea[profile][key_update][method]["reference"]
+                    idea = self.trend_idea[profile][key_update][method]["idea"]
+                    isQuery = True 
 
         # import pdb
         # pdb.set_trace()
-        reference = papertitleAndLink(paper_link)
-        # print("Trend:", self.trend,"\n")
-        idea = generate_ideas(trend) # idea
+        if not(isQuery):
+            trend, paper_link = summarize_research_field(profile, "Machine Learning", dataset,data_chunk_embedding) # trend
+            reference = papertitleAndLink(paper_link)
+            idea = generate_ideas(trend) # idea
+            if profile in self.trend_idea:
+                if key_update in self.trend_idea[profile]:
+                    if not(method in self.trend_idea[profile][key_update]):
+                        self.trend_idea[profile][key_update][method] = {}
+                else:
+                    self.trend_idea[profile][key_update] = {}
+                    self.trend_idea[profile][key_update][method] = {}
+            else:
+                self.trend_idea[profile] = {}
+                self.trend_idea[profile][key_update] = {}
+                self.trend_idea[profile][key_update][method] = {}
 
-        key_update = list(self.paper.keys())[-1]
+            self.trend_idea[profile][key_update][method]["trend"] = trend
+            self.trend_idea[profile][key_update][method]["reference"] = reference 
+            self.trend_idea[profile][key_update][method]["idea"] = idea 
+
+
+        
         if key_update not in self.thought:
             self.thought[key_update] = []
         if key_update not in self.thought_embedding:
@@ -205,22 +238,11 @@ class ArxivAgent:
         self.thought_embedding[key_update].append(get_bert_embedding([trend])[0])
         self.thought[key_update].append(idea[0])
         self.thought_embedding[key_update].append(get_bert_embedding([idea])[0])
-        # with open(self.dataset_path, "w") as f_:
-        #     json.dump(self.paper, f_)
-
-        with open(self.thought_path, "w") as f_:
-            json.dump(self.thought, f_)
-
-        with open(self.thought_embedding_path, "wb") as f:
-            pickle.dump(self.thought_embedding, f)
-
 
         return trend, reference, idea
 
     def response(self, data, profile_input):
-        # dataset = self.paper_by_date
 
-        # dataset = self.paper
         query = [data]
         profile = profile_input
 
@@ -315,7 +337,7 @@ class ArxivAgent:
 
     
 
-    def load_feedback(self):
+    def load_cache(self):
         filename = self.feedback_path
 
         if os.path.exists(filename):
@@ -330,12 +352,7 @@ class ArxivAgent:
                 m = {}
         self.feedback = m.copy()
 
-   
-
-
-    def load_thought(self):
-        filename = self.thought_path
-        filename_emb = self.thought_embedding_path
+        filename = self.trend_idea_path
 
         if os.path.exists(filename):
             with open(filename,"rb") as f:
@@ -347,7 +364,33 @@ class ArxivAgent:
         else:
             with open(filename, mode='w', encoding='utf-8') as ff:
                 m = {}
+        self.trend_idea = m.copy()
 
+        filename = self.profile_path
+        if os.path.exists(filename):
+            with open(filename,"rb") as f:
+                content = f.read()
+                if not content:
+                    m = {}
+                else:
+                    m = json.loads(content)
+        else:
+            with open(filename, mode='w', encoding='utf-8') as ff:
+                m = {}
+        self.profile = m.copy()
+
+        filename = self.thought_path
+        filename_emb = self.thought_embedding_path
+        if os.path.exists(filename):
+            with open(filename,"rb") as f:
+                content = f.read()
+                if not content:
+                    m = {}
+                else:
+                    m = json.loads(content)
+        else:
+            with open(filename, mode='w', encoding='utf-8') as ff:
+                m = {}
 
         if os.path.exists(filename_emb):
             with open(filename_emb,"rb") as f:
@@ -366,12 +409,7 @@ class ArxivAgent:
 
 
 
-        # for date in self.thought.keys():
-        #     papers = data[time]['abstract']
-        #     papers_embedding=get_bert_embedding(papers)
-        #     time_chunks_embed[time.strftime("%m/%d/%Y")] = papers_embedding
-        # return 
-        # for k in json_data.keys():
+
     def update_feedback_thought(self, query, ansA, ansB, feedbackA, feedbackB): 
         try:
             thread6.run_threaded(feedback_thought, [self, query, ansA, ansB, feedbackA, feedbackB])
@@ -413,22 +451,7 @@ class ArxivAgent:
 
 
 
-        filename = 'dataset/profile.json'
-        if os.path.exists(filename):
-            with open(filename,"r") as f:
-                content = f.read()
-                if not content:
-                    m = {}
-                else:
-                    m = json.loads(content)
-        else:
-            with open(filename, mode='w', encoding='utf-8') as ff:
-                m = {}
-            
-                
-        json_data = m.copy() 
-
-        if author_name in json_data: return json_data[author_name]
+        if author_name in self.profile: return self.profile[author_name]
            
         author_query = author_name.replace(" ", "+")
         url = f"http://export.arxiv.org/api/query?search_query=au:{author_query}&start=0&max_results=300"  # Adjust max_results if needed
@@ -512,15 +535,11 @@ class ArxivAgent:
             # pdb.set_trace()
             personal_info = "; ".join([f"{details['Title & Abstract']}" for details in papers_list])
             info = summarize_research_direction(personal_info)
-            json_data[author_name] = info
-            with open(filename,"w") as f:
-                json.dump(json_data,f)
-            return json_data[author_name]
+            self.profile[author_name] = info
 
-            # data = {author_name: {"paper_{}".format(i+1): paper for i, paper in enumerate(papers_list)}}
+            return self.profile[author_name]
 
         else:
-            # print("Failed to fetch data from arXiv.")
             return None
 
 

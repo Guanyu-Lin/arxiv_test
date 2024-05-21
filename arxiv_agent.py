@@ -4,8 +4,11 @@ import json
 import time
 import datetime
 from xml.etree import ElementTree
-
+from huggingface_hub import CommitScheduler
+from huggingface_hub import HfApi
+from pathlib import Path
 import requests
+from datasets import load_dataset_builder
 import warnings
 warnings.filterwarnings("ignore")
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -13,6 +16,24 @@ from utils import *
 import thread6
 MAX_DAILY_PAPER = 200
 DAY_TIME = 60 * 60 * 24
+DAY_TIME_MIN = 60 * 24
+DATA_REPO_ID = "cmulgy/ArxivCopilot_data"
+READ_WRITE_TOKEN = os.environ['READ_WRITE']
+api = HfApi(token = READ_WRITE_TOKEN)
+
+DATASET_DIR = Path(".")
+DATASET_DIR.mkdir(parents=True, exist_ok=True)
+from huggingface_hub import hf_hub_download
+
+
+scheduler = CommitScheduler(
+    repo_id=DATA_REPO_ID,
+    repo_type="dataset",
+    folder_path=DATASET_DIR,
+    path_in_repo=".",
+    hf_api = api,
+    every = DAY_TIME_MIN,
+)  
 
 def feedback_thought(input_ls): # preload
     agent, query, ansA, ansB, feedbackA, feedbackB = input_ls
@@ -39,8 +60,9 @@ def feedback_thought(input_ls): # preload
     json_data[date][query]["feedbackA"] = feedbackA
     json_data[date][query]["answerB"] = (ansB)
     json_data[date][query]["feedbackB"] = feedbackB
-    with open(filename,"w") as f:
-        json.dump(json_data,f)
+    with scheduler.lock:
+        with open(filename,"w") as f:
+            json.dump(json_data,f)
 
     preferred_ans = ""
     if feedbackA == 1:
@@ -71,12 +93,12 @@ def feedback_thought(input_ls): # preload
                 agent.thought_embedding[date] = [get_bert_embedding([tem_thought])[0]]
             else:
                 agent.thought_embedding[date].append(get_bert_embedding([tem_thought])[0])
+            with scheduler.lock:
+                with open(filename_thought,"w") as f:
+                    json.dump(json_data_thought,f)
 
-            with open(filename_thought,"w") as f:
-                json.dump(json_data_thought,f)
-
-            with open(agent.thought_embedding_path, "wb") as f:
-                pickle.dump(agent.thought_embedding, f)
+                with open(agent.thought_embedding_path, "wb") as f:
+                    pickle.dump(agent.thought_embedding, f)
 
     # return "Give feedback successfully!"
 
@@ -96,7 +118,7 @@ def dailyDownload(agent_ls):
 
         json_file = agent.dataset_path
 
-        update_file=update_json_file(json_file, data_collector)
+        update_file=update_json_file(json_file, data_collector, scheduler)
 
         time_chunks_embed={}
 
@@ -105,43 +127,53 @@ def dailyDownload(agent_ls):
                 papers = data[date]['abstract']
                 papers_embedding=get_bert_embedding(papers)
                 time_chunks_embed[date.strftime("%m/%d/%Y")] = papers_embedding
-        update_paper_file=update_pickle_file(agent.embedding_path,time_chunks_embed)
+        update_paper_file=update_pickle_file(agent.embedding_path,time_chunks_embed, scheduler)
         agent.paper = update_file
         agent.paper_embedding = update_paper_file
         print("Today is " + agent.newest_day.strftime("%m/%d/%Y"))
 
 def dailySave(agent_ls):
     agent = agent_ls[0]
+
+
     while True:
         time.sleep(DAY_TIME)
-        with open(agent.trend_idea_path, "w") as f_:
-            json.dump(agent.trend_idea, f_)
-            
-        with open(agent.thought_path, "w") as f_:
-            json.dump(agent.thought, f_)
+        with scheduler.lock: 
+            with open(agent.trend_idea_path, "w") as f_:
+                json.dump(agent.trend_idea, f_)
+                
+            with open(agent.thought_path, "w") as f_:
+                json.dump(agent.thought, f_)
 
-        with open(agent.thought_embedding_path, "wb") as f:
-            pickle.dump(agent.thought_embedding, f)
-            
-        with open(agent.profile_path,"w") as f:
-            json.dump(agent.profile,f)
-
+            with open(agent.thought_embedding_path, "wb") as f:
+                pickle.dump(agent.thought_embedding, f)
+                
+            with open(agent.profile_path,"w") as f:
+                json.dump(agent.profile,f)
+            with open(agent.comment_path,"w") as f:
+                json.dump(agent.comment,f)
 
 class ArxivAgent:
     def __init__(self):
         
-        self.dataset_path = "./dataset/paper.json"
-        self.thought_path = "./dataset/thought.json"
-        self.trend_idea_path = "./dataset/trend_idea.json"
-        self.profile_path = "./dataset/profile.json"
+        self.dataset_path = DATASET_DIR / "dataset/paper.json"
+        self.thought_path = DATASET_DIR / "dataset/thought.json"
+        self.trend_idea_path = DATASET_DIR / "dataset/trend_idea.json"
+        self.profile_path = DATASET_DIR / "dataset/profile.json"
+        self.comment_path = DATASET_DIR / "dataset/comment.json"
 
-        self.embedding_path = "./dataset/paper_embedding.pkl"
-        self.thought_embedding_path = './dataset/thought_embedding.pkl'
-
-        self.feedback_path = 'dataset/feedback.json'
+        self.embedding_path = DATASET_DIR / "dataset/paper_embedding.pkl"
+        self.thought_embedding_path = DATASET_DIR / "dataset/thought_embedding.pkl"
+        
+        self.feedback_path = DATASET_DIR / "dataset/feedback.json"
         self.today = datetime.datetime.now().strftime("%m/%d/%Y")
 
         self.newest_day = ""
+        
+        
+        # import pdb
+        # pdb.set_trace()
+
         self.load_cache()
 
         self.download()
@@ -315,15 +347,21 @@ class ArxivAgent:
             data_collector.append(data)
 
         json_file = self.dataset_path
-        if not os.path.exists(json_file):
+
+        
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/paper.json", local_dir = ".", repo_type="dataset")
+        except:
             with open(json_file,'w')as a:
-                print("create " + json_file)
+                print(json_file)
 
-        update_file=update_json_file(json_file, data_collector)
+        update_file=update_json_file(json_file, data_collector, scheduler)
 
-        if not os.path.exists(self.embedding_path):
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/paper_embedding.pkl", local_dir = ".", repo_type="dataset")
+        except:
             with open(self.embedding_path,'wb')as a:
-                print("create " + self.embedding_path)
+                print(self.embedding_path)
         time_chunks_embed={}
 
         for data in data_collector:
@@ -331,75 +369,87 @@ class ArxivAgent:
                 papers = data[date]['abstract']
                 papers_embedding=get_bert_embedding(papers)
                 time_chunks_embed[date.strftime("%m/%d/%Y")] = papers_embedding
-        update_paper_file=update_pickle_file(self.embedding_path,time_chunks_embed)
+        update_paper_file=update_pickle_file(self.embedding_path,time_chunks_embed, scheduler)
         self.paper = update_file
         self.paper_embedding = update_paper_file
 
     
 
     def load_cache(self):
-        filename = self.feedback_path
 
-        if os.path.exists(filename):
+
+        filename = self.feedback_path
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/feedback.json", local_dir = ".", repo_type="dataset")
             with open(filename,"rb") as f:
                 content = f.read()
                 if not content:
                     m = {}
                 else:
                     m = json.loads(content)
-        else:
+        except:
             with open(filename, mode='w', encoding='utf-8') as ff:
                 m = {}
         self.feedback = m.copy()
 
         filename = self.trend_idea_path
 
-        if os.path.exists(filename):
+        # if os.path.exists(filename):
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/trend_idea.json", local_dir = ".", repo_type="dataset")    
             with open(filename,"rb") as f:
                 content = f.read()
                 if not content:
                     m = {}
                 else:
                     m = json.loads(content)
-        else:
+        except:
             with open(filename, mode='w', encoding='utf-8') as ff:
                 m = {}
         self.trend_idea = m.copy()
 
+
         filename = self.profile_path
-        if os.path.exists(filename):
+        # if os.path.exists(filename):
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/profile.json", local_dir = ".", repo_type="dataset")    
             with open(filename,"rb") as f:
                 content = f.read()
                 if not content:
                     m = {}
                 else:
                     m = json.loads(content)
-        else:
+        except:
             with open(filename, mode='w', encoding='utf-8') as ff:
                 m = {}
         self.profile = m.copy()
 
+
         filename = self.thought_path
         filename_emb = self.thought_embedding_path
-        if os.path.exists(filename):
+        # if os.path.exists(filename):
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/thought.json", local_dir = ".", repo_type="dataset")    
             with open(filename,"rb") as f:
                 content = f.read()
                 if not content:
                     m = {}
                 else:
                     m = json.loads(content)
-        else:
+        except:
             with open(filename, mode='w', encoding='utf-8') as ff:
                 m = {}
 
-        if os.path.exists(filename_emb):
+        # if os.path.exists(filename_emb):
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/thought_embedding.pkl", local_dir = ".", repo_type="dataset")    
             with open(filename_emb,"rb") as f:
                 content = f.read()
                 if not content:
                     m_emb = {}
                 else:
                     m_emb = pickle.loads(content)
-        else:
+        except:
             with open(filename_emb, mode='w', encoding='utf-8') as ff:
                 m_emb = {}
 
@@ -407,6 +457,23 @@ class ArxivAgent:
         self.thought_embedding = m_emb.copy() 
 
 
+        filename = self.comment_path
+        # if os.path.exists(filename):
+        try:
+            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/comment.json", local_dir = ".", repo_type="dataset")    
+
+            with open(filename,"r") as f:
+                content = f.read()
+                if not content:
+                    m = {}
+                else:
+                    m = json.loads(content)
+        except:
+            with open(filename, mode='w', encoding='utf-8') as ff:
+                m = {}
+            
+                
+        self.comment = m.copy() 
 
 
 
@@ -421,27 +488,16 @@ class ArxivAgent:
     def update_comment(self, comment):
         date = datetime.datetime.now().strftime("%m/%d/%Y")
 
-        filename = 'dataset/comment.json'
-        if os.path.exists(filename):
-            with open(filename,"r") as f:
-                content = f.read()
-                if not content:
-                    m = {}
-                else:
-                    m = json.loads(content)
-        else:
-            with open(filename, mode='w', encoding='utf-8') as ff:
-                m = {}
-            
+
                 
-        json_data = m.copy() 
+        json_data = self.comment
 
         if date not in json_data:
             json_data[date] = [comment]
         else: json_data[date].append(comment) 
-
-        with open(filename,"w") as f:
-            json.dump(json_data,f)
+        # with scheduler.lock:
+        #     with open(filename,"w") as f:
+        #         json.dump(json_data,f)
         return "Thanks for your comment!"
     
 

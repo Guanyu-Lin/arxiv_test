@@ -275,14 +275,14 @@ def summarize_research_field(profile, keywords, dataset,data_embedding):
     content = completion.choices[0].message["content"]
     content_l.append(content)
     return content_l, retrieve_paper
-def update_json_file(filename,data_all):
+def update_json_file(filename,data_all, scheduler):
     with open(filename,"r") as f:
         content = f.read()
         if not content:
             m = {}
         else:
             m = json.loads(content)
-            
+                
     json_data = m.copy() 
     
     # update papers in each keywords         
@@ -296,11 +296,12 @@ def update_json_file(filename,data_all):
         papers['ch_abs']=copy.deepcopy(papers['abstract'])
         # print(papers.published)
         json_data[time] = papers
-    with open(filename,"w") as f_:
-        json.dump(json_data,f_)
+    with scheduler.lock: 
+        with open(filename,"w") as f_:
+            json.dump(json_data,f_)
     return json_data
 
-def update_pickle_file(filename, data_all):
+def update_pickle_file(filename, data_all, scheduler):
 
     # if os.path.exists(filename):
         # with open(filename,"rb") as f:
@@ -311,8 +312,23 @@ def update_pickle_file(filename, data_all):
     #         m = {}
     #     else:
     #         m = json.load(content)
-    with open(filename, "rb") as file:
-        m = pickle.load(file)        
+
+    # if os.path.exists(filename):
+    with open(filename,"rb") as f:
+        content = f.read()
+        if not content:
+            m = {}
+        else:
+            m = pickle.loads(content)
+    # else:
+    #     with open(filename, mode='w', encoding='utf-8') as ff:
+    #         m = {}
+    # if os.path.exists(filename):
+    #     with open(filename, "rb") as file:
+    #         m = pickle.load(file)
+    # else:
+    #     m = {}
+
     # json_data = m.copy() 
     # else:
     #     with open(filename, mode='wb', encoding='utf-8') as ff:
@@ -325,8 +341,9 @@ def update_pickle_file(filename, data_all):
     for time in data_all.keys():
         embeddings = data_all[time]
         pickle_data[time] =embeddings
-    with open(filename, "wb") as f:
-        pickle.dump(pickle_data, f)
+    with scheduler.lock: 
+        with open(filename, "wb") as f:
+            pickle.dump(pickle_data, f)
 
     return pickle_data
 def json_to_md(filename):

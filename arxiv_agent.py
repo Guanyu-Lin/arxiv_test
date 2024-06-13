@@ -163,7 +163,7 @@ class ArxivAgent:
         
         self.load_cache()
 
-        self.download()
+        # self.download()
         # try:
         #     thread6.run_threaded(dailyDownload, [self])
         #     thread6.run_threaded(dailySave, [self])
@@ -285,24 +285,24 @@ class ArxivAgent:
         dataset = self.paper
         text_chunk_l = []
         chunks_embedding_text_all = []
-        cnt = 0
+        # cnt = 0
         for k in dataset.keys():
-            text_chunk_l.extend(dataset[k]['abstract'])
-            chunks_embedding_text_all.extend(self.paper_embedding[k])
-            if cnt >= n: break
-            cnt = cnt + 1
+            text_chunk_l.extend(dataset[k]['abstract'][:n])
+            chunks_embedding_text_all.extend(self.paper_embedding[k][:n])
+            # if cnt >= n: break
+            # cnt = cnt + 1
         neib_all = neiborhood_search(chunks_embedding_text_all, query_embedding, num=10)
 
     def generate_pair_retrieve_text_initial(self, query_embedding, n):
         dataset = self.paper
         text_chunk_l = []
         chunks_embedding_text_all = []
-        cnt = 0
+        # cnt = 0
         for k in dataset.keys():
-            text_chunk_l.extend(dataset[k]['abstract'])
-            chunks_embedding_text_all.extend(get_bert_embedding(dataset[k]['abstract']))
-            if cnt >= n: break
-            cnt = cnt + 1
+            text_chunk_l.extend(dataset[k]['abstract'][:n])
+            chunks_embedding_text_all.extend(get_bert_embedding(dataset[k]['abstract'][:n]))
+            # if cnt >= n: break
+            # cnt = cnt + 1
         neib_all = neiborhood_search(chunks_embedding_text_all, query_embedding, num=10)
         
     def download(self):

@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import openai
 import faiss
 from transformers import BertTokenizer, BertModel
 import torch
@@ -21,8 +20,6 @@ warnings.filterwarnings("ignore")
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
-KEY = os.environ['API_KEY']
-openai.api_base = 'https://api.together.xyz'
 llm_model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
 tokenizer = BertTokenizer.from_pretrained('facebook/contriever')
@@ -99,11 +96,10 @@ def get_daily_papers(topic,query="slam", max_results=300):
 
 
         publish_time = result.published.date()
-        if newest_day is not None and not(newest_day == publish_time):
-
-            break
-        elif newest_day is None:
-            newest_day = publish_time
+        # if newest_day is not None and not(newest_day == publish_time):
+        #     break
+        # elif newest_day is None:
+        #     newest_day = publish_time
         
 
         if publish_time in content:

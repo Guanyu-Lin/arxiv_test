@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from utils import *
 import thread6
-MAX_DAILY_PAPER = 200
+MAX_DAILY_PAPER = 2000
 DAY_TIME = 60 * 60 * 24
 DAY_TIME_MIN = 60 * 24
 DATA_REPO_ID = "cmulgy/ArxivCopilot_data"
@@ -170,18 +170,14 @@ class ArxivAgent:
 
         self.newest_day = ""
         
-        
-        # import pdb
-        # pdb.set_trace()
-
         self.load_cache()
 
         self.download()
-        try:
-            thread6.run_threaded(dailyDownload, [self])
-            thread6.run_threaded(dailySave, [self])
-        except:
-            print("Error: unable to start thread")
+        # try:
+        #     thread6.run_threaded(dailyDownload, [self])
+        #     thread6.run_threaded(dailySave, [self])
+        # except:
+        #     print("Error: unable to start thread")
 
     def edit_profile(self, profile, author_name):
 
@@ -279,62 +275,45 @@ class ArxivAgent:
         profile = profile_input
 
         query_embedding=get_bert_embedding(query)
+        No_paper = [2**i for i in range(10)]
+        optimized_cost = []
+        initial_cost = []
+        for n in No_paper:
+            time_start=time.time()
+            self.generate_pair_retrieve_text(query_embedding, n)
+            time_end=time.time()
+            optimized_cost.append(time_end - time_start)
 
-
-        retrieve_text,retrieve_text_org=self.generate_pair_retrieve_text(query_embedding)
-
-        context,context_org = [retrieve_text],[retrieve_text_org]
-
-        answer_l = get_response_through_LLM_answer(query, context,profile)
-        answer_l_org = get_response_through_LLM_answer(query, context_org, profile)
-
-
-
-        return answer_l,answer_l_org
-
-    def generate_pair_retrieve_text(self, query_embedding):
-        # Access dataset
+            time_start=time.time()
+            self.generate_pair_retrieve_text_initial(query_embedding, n)
+            time_end=time.time()
+            initial_cost.append(time_end - time_start)
+        print(optimized_cost)
+        print(initial_cost)
+    def generate_pair_retrieve_text(self, query_embedding, n):
         dataset = self.paper
-        thought = self.thought
-
         text_chunk_l = []
         chunks_embedding_text_all = []
-
-        text_org_chunk_l = []
-        chunks_org_embedding_text_all = []
-
-        # Include all text chunks and their embeddings
+        cnt = 0
         for k in dataset.keys():
             text_chunk_l.extend(dataset[k]['abstract'])
             chunks_embedding_text_all.extend(self.paper_embedding[k])
-
-            text_org_chunk_l.extend(dataset[k]['abstract'])
-            chunks_org_embedding_text_all.extend(self.paper_embedding[k])
-            
-        for k in thought.keys():
-            if k in self.thought_embedding.keys():
-                text_chunk_l.extend(thought[k])
-                chunks_embedding_text_all.extend(self.thought_embedding[k])
-
-
-        # Include thoughts if not excluded
-
+            if cnt >= n: break
+            cnt = cnt + 1
         neib_all = neiborhood_search(chunks_embedding_text_all, query_embedding, num=10)
-        neib_all = neib_all.reshape(-1)
-        # import pdb
-        # pdb.set_trace()
-        # Compile retrieved text
-        # import pdb
-        # pdb.set_trace()
-        retrieve_text = ''.join([text_chunk_l[i] for i in neib_all])
 
-        neib_all = neiborhood_search(chunks_org_embedding_text_all, query_embedding, num=10)
-        neib_all = neib_all.reshape(-1)
-        # Compile retrieved text
-        retrieve_text_org = ''.join([text_org_chunk_l[i] for i in neib_all])
-
-        return retrieve_text,retrieve_text_org
-
+    def generate_pair_retrieve_text_initial(self, query_embedding, n):
+        dataset = self.paper
+        text_chunk_l = []
+        chunks_embedding_text_all = []
+        cnt = 0
+        for k in dataset.keys():
+            text_chunk_l.extend(dataset[k]['abstract'])
+            chunks_embedding_text_all.extend(get_bert_embedding(dataset[k]['abstract']))
+            if cnt >= n: break
+            cnt = cnt + 1
+        neib_all = neiborhood_search(chunks_embedding_text_all, query_embedding, num=10)
+        
     def download(self):
         # key_word = "Machine Learning"
         data_collector = []

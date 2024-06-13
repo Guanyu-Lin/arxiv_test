@@ -271,7 +271,7 @@ def summarize_research_field(profile, keywords, dataset,data_embedding):
     content = completion.choices[0].message["content"]
     content_l.append(content)
     return content_l, retrieve_paper
-def update_json_file(filename,data_all, scheduler):
+def update_json_file(filename,data_all):
     with open(filename,"r") as f:
         content = f.read()
         if not content:
@@ -292,9 +292,9 @@ def update_json_file(filename,data_all, scheduler):
         papers['ch_abs']=copy.deepcopy(papers['abstract'])
         # print(papers.published)
         json_data[time] = papers
-    with scheduler.lock: 
-        with open(filename,"w") as f_:
-            json.dump(json_data,f_)
+    
+    with open(filename,"w") as f_:
+        json.dump(json_data,f_)
     return json_data
 
 def update_pickle_file(filename, data_all, scheduler):

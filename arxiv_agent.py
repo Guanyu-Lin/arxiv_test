@@ -109,7 +109,7 @@ def dailyDownload(agent_ls):
 
         json_file = agent.dataset_path
 
-        update_file=update_json_file(json_file, data_collector, scheduler)
+        update_file=update_json_file(json_file, data_collector)
 
         time_chunks_embed={}
 
@@ -330,7 +330,7 @@ class ArxivAgent:
         with open(json_file,'w')as a:
             print(json_file)
 
-        update_file=update_json_file(json_file, data_collector, scheduler)
+        update_file=update_json_file(json_file, data_collector)
 
         # try:
         #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/paper_embedding.pkl", local_dir = ".", repo_type="dataset")

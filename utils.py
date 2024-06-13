@@ -285,12 +285,11 @@ def update_json_file(filename,data_all):
     for data in data_all:
         for time in data.keys():
             papers = data[time]
-            # print(papers.published)i
             cur_time = time.strftime("%m/%d/%Y")
-            if cur_time in json_data:
-                json_data[time.strftime("%m/%d/%Y")].extend(papers)    
-            else:
-                json_data[time.strftime("%m/%d/%Y")] = papers
+            # import pdb
+            # pdb.set_trace()
+        
+            json_data[cur_time] = papers
     for time in json_data.keys():
         papers = json_data[time]
         papers['ch_abs']=copy.deepcopy(papers['abstract'])
@@ -340,10 +339,8 @@ def update_pickle_file(filename, data_all):
 
     for time in data_all.keys():
         embeddings = data_all[time]
-        if time in pickle_data:
-            pickle_data[time].extend(embeddings)
-        else:
-            pickle_data[time] =embeddings
+         
+        pickle_data[time] =embeddings
     with open(filename, "wb") as f:
         pickle.dump(pickle_data, f)
 

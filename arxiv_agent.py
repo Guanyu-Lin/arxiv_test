@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from utils import *
 import thread6
-MAX_DAILY_PAPER = 2000
+MAX_DAILY_PAPER = 200
 DAY_TIME = 60 * 60 * 24
 DAY_TIME_MIN = 60 * 24
 DATA_REPO_ID = "cmulgy/ArxivCopilot_data"
@@ -314,6 +314,11 @@ class ArxivAgent:
         for topic,keyword in keywords.items():
     
             data, self.newest_day = get_daily_papers(topic, query = keyword, max_results = MAX_DAILY_PAPER)
+            data_collector.append(data)
+            data_collector.append(data)
+            data_collector.append(data)
+            data_collector.append(data)
+            data_collector.append(data)
             data_collector.append(data)
 
         json_file = self.dataset_path

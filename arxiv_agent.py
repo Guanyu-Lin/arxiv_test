@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from utils import *
 import thread6
-MAX_DAILY_PAPER = 10
+MAX_DAILY_PAPER = 200
 DAY_TIME = 60 * 60 * 24
 DAY_TIME_MIN = 60 * 24
 DATA_REPO_ID = "cmulgy/ArxivCopilot_data"

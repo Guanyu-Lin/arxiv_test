@@ -344,7 +344,7 @@ class ArxivAgent:
                 papers = data[date]['abstract']
                 papers_embedding=get_bert_embedding(papers)
                 time_chunks_embed[date.strftime("%m/%d/%Y")] = papers_embedding
-        update_paper_file=update_pickle_file(self.embedding_path,time_chunks_embed, scheduler)
+        update_paper_file=update_pickle_file(self.embedding_path,time_chunks_embed)
         self.paper = update_file
         self.paper_embedding = update_paper_file
 

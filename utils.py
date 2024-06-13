@@ -297,7 +297,7 @@ def update_json_file(filename,data_all):
         json.dump(json_data,f_)
     return json_data
 
-def update_pickle_file(filename, data_all, scheduler):
+def update_pickle_file(filename, data_all):
 
     # if os.path.exists(filename):
         # with open(filename,"rb") as f:
@@ -337,9 +337,8 @@ def update_pickle_file(filename, data_all, scheduler):
     for time in data_all.keys():
         embeddings = data_all[time]
         pickle_data[time] =embeddings
-    with scheduler.lock: 
-        with open(filename, "wb") as f:
-            pickle.dump(pickle_data, f)
+    with open(filename, "wb") as f:
+        pickle.dump(pickle_data, f)
 
     return pickle_data
 def json_to_md(filename):

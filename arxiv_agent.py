@@ -18,22 +18,13 @@ MAX_DAILY_PAPER = 2000
 DAY_TIME = 60 * 60 * 24
 DAY_TIME_MIN = 60 * 24
 DATA_REPO_ID = "cmulgy/ArxivCopilot_data"
-READ_WRITE_TOKEN = os.environ['READ_WRITE']
-api = HfApi(token = READ_WRITE_TOKEN)
 
 DATASET_DIR = Path(".")
 DATASET_DIR.mkdir(parents=True, exist_ok=True)
 from huggingface_hub import hf_hub_download
 
 
-scheduler = CommitScheduler(
-    repo_id=DATA_REPO_ID,
-    repo_type="dataset",
-    folder_path=DATASET_DIR,
-    path_in_repo=".",
-    hf_api = api,
-    every = DAY_TIME_MIN,
-)  
+
 
 def feedback_thought(input_ls): # preload
     agent, query, ansA, ansB, feedbackA, feedbackB = input_ls
@@ -328,19 +319,19 @@ class ArxivAgent:
         json_file = self.dataset_path
 
         
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/paper.json", local_dir = ".", repo_type="dataset")
-        except:
-            with open(json_file,'w')as a:
-                print(json_file)
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/paper.json", local_dir = ".", repo_type="dataset")
+        # except:
+        with open(json_file,'w')as a:
+            print(json_file)
 
         update_file=update_json_file(json_file, data_collector, scheduler)
 
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/paper_embedding.pkl", local_dir = ".", repo_type="dataset")
-        except:
-            with open(self.embedding_path,'wb')as a:
-                print(self.embedding_path)
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/paper_embedding.pkl", local_dir = ".", repo_type="dataset")
+        # except:
+        with open(self.embedding_path,'wb')as a:
+            print(self.embedding_path)
         time_chunks_embed={}
 
         for data in data_collector:
@@ -358,79 +349,79 @@ class ArxivAgent:
 
 
         filename = self.feedback_path
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/feedback.json", local_dir = ".", repo_type="dataset")
-            with open(filename,"rb") as f:
-                content = f.read()
-                if not content:
-                    m = {}
-                else:
-                    m = json.loads(content)
-        except:
-            with open(filename, mode='w', encoding='utf-8') as ff:
-                m = {}
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/feedback.json", local_dir = ".", repo_type="dataset")
+        #     with open(filename,"rb") as f:
+        #         content = f.read()
+        #         if not content:
+        #             m = {}
+        #         else:
+        #             m = json.loads(content)
+        # except:
+        with open(filename, mode='w', encoding='utf-8') as ff:
+            m = {}
         self.feedback = m.copy()
 
         filename = self.trend_idea_path
 
         # if os.path.exists(filename):
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/trend_idea.json", local_dir = ".", repo_type="dataset")    
-            with open(filename,"rb") as f:
-                content = f.read()
-                if not content:
-                    m = {}
-                else:
-                    m = json.loads(content)
-        except:
-            with open(filename, mode='w', encoding='utf-8') as ff:
-                m = {}
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/trend_idea.json", local_dir = ".", repo_type="dataset")    
+        #     with open(filename,"rb") as f:
+        #         content = f.read()
+        #         if not content:
+        #             m = {}
+        #         else:
+        #             m = json.loads(content)
+        # except:
+        with open(filename, mode='w', encoding='utf-8') as ff:
+            m = {}
         self.trend_idea = m.copy()
 
 
         filename = self.profile_path
         # if os.path.exists(filename):
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/profile.json", local_dir = ".", repo_type="dataset")    
-            with open(filename,"rb") as f:
-                content = f.read()
-                if not content:
-                    m = {}
-                else:
-                    m = json.loads(content)
-        except:
-            with open(filename, mode='w', encoding='utf-8') as ff:
-                m = {}
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/profile.json", local_dir = ".", repo_type="dataset")    
+        #     with open(filename,"rb") as f:
+        #         content = f.read()
+        #         if not content:
+        #             m = {}
+        #         else:
+        #             m = json.loads(content)
+        # except:
+        with open(filename, mode='w', encoding='utf-8') as ff:
+            m = {}
         self.profile = m.copy()
 
 
         filename = self.thought_path
         filename_emb = self.thought_embedding_path
         # if os.path.exists(filename):
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/thought.json", local_dir = ".", repo_type="dataset")    
-            with open(filename,"rb") as f:
-                content = f.read()
-                if not content:
-                    m = {}
-                else:
-                    m = json.loads(content)
-        except:
-            with open(filename, mode='w', encoding='utf-8') as ff:
-                m = {}
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/thought.json", local_dir = ".", repo_type="dataset")    
+        #     with open(filename,"rb") as f:
+        #         content = f.read()
+        #         if not content:
+        #             m = {}
+        #         else:
+        #             m = json.loads(content)
+        # except:
+        with open(filename, mode='w', encoding='utf-8') as ff:
+            m = {}
 
         # if os.path.exists(filename_emb):
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/thought_embedding.pkl", local_dir = ".", repo_type="dataset")    
-            with open(filename_emb,"rb") as f:
-                content = f.read()
-                if not content:
-                    m_emb = {}
-                else:
-                    m_emb = pickle.loads(content)
-        except:
-            with open(filename_emb, mode='w', encoding='utf-8') as ff:
-                m_emb = {}
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/thought_embedding.pkl", local_dir = ".", repo_type="dataset")    
+        #     with open(filename_emb,"rb") as f:
+        #         content = f.read()
+        #         if not content:
+        #             m_emb = {}
+        #         else:
+        #             m_emb = pickle.loads(content)
+        # except:
+        with open(filename_emb, mode='w', encoding='utf-8') as ff:
+            m_emb = {}
 
         self.thought = m.copy() 
         self.thought_embedding = m_emb.copy() 
@@ -438,18 +429,18 @@ class ArxivAgent:
 
         filename = self.comment_path
         # if os.path.exists(filename):
-        try:
-            hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/comment.json", local_dir = ".", repo_type="dataset")    
+        # try:
+        #     hf_hub_download(repo_id=DATA_REPO_ID, filename="dataset/comment.json", local_dir = ".", repo_type="dataset")    
 
-            with open(filename,"r") as f:
-                content = f.read()
-                if not content:
-                    m = {}
-                else:
-                    m = json.loads(content)
-        except:
-            with open(filename, mode='w', encoding='utf-8') as ff:
-                m = {}
+        #     with open(filename,"r") as f:
+        #         content = f.read()
+        #         if not content:
+        #             m = {}
+        #         else:
+        #             m = json.loads(content)
+        # except:
+        with open(filename, mode='w', encoding='utf-8') as ff:
+            m = {}
             
                 
         self.comment = m.copy() 

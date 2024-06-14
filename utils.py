@@ -10,6 +10,7 @@ import copy
 import pickle
 import random
 import torch.nn.functional as F
+import openai
 
 seed_value = 42 
 random.seed(seed_value)
@@ -19,8 +20,10 @@ torch.manual_seed(seed_value)
 warnings.filterwarnings("ignore")
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
+KEY = "ba50c8e3d8753b18e53246224e23c45417b717f88ed231b6b314b3fcb06406f2"
 
 llm_model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+openai.api_base = 'https://api.together.xyz'
 
 tokenizer = BertTokenizer.from_pretrained('facebook/contriever')
 model = BertModel.from_pretrained('facebook/contriever').to(torch.device("cpu"))

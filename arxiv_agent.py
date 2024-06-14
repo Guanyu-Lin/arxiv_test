@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from utils import *
 import thread6
-MAX_DAILY_PAPER = 200
+MAX_DAILY_PAPER = 10
 DAY_TIME = 60 * 60 * 24
 DAY_TIME_MIN = 60 * 24
 DATA_REPO_ID = "cmulgy/ArxivCopilot_data"
@@ -281,6 +281,22 @@ class ArxivAgent:
             initial_cost.append(time_end - time_start)
         print(optimized_cost)
         print(initial_cost)
+
+    def pure_llm(self, data, profile_input):
+        query = [data]
+        profile = profile_input
+        query_embedding=get_bert_embedding(query)
+        No_paper = [2**i for i in range(10)]
+        optimized_cost = []
+        initial_cost = []
+        context = self.generate_pair_retrieve_text(query_embedding, n)
+    
+        time_start=time.time()
+        answer_l = get_response_through_LLM_answer(query, context,profile)
+        time_end=time.time()
+
+        print(time_end - time_start)
+        # print(initial_cost)
     def generate_pair_retrieve_text(self, query_embedding, n):
         dataset = self.paper
         text_chunk_l = []
@@ -290,9 +306,11 @@ class ArxivAgent:
             text_chunk_l.extend(dataset[k]['abstract'][:n])
             chunks_embedding_text_all.extend(self.paper_embedding[k][:n])
             # if cnt >= n: break
-            # cnt = cnt + 1
         neib_all = neiborhood_search(chunks_embedding_text_all, query_embedding, num=10)
+        neib_all = neib_all.reshape(-1)
 
+        retrieve_text = ''.join([text_chunk_l[i] for i in neib_all])
+        return retrieve_text
     def generate_pair_retrieve_text_initial(self, query_embedding, n):
         dataset = self.paper
         text_chunk_l = []
@@ -315,11 +333,11 @@ class ArxivAgent:
     
             data, self.newest_day = get_daily_papers(topic, query = keyword, max_results = MAX_DAILY_PAPER)
             data_collector.append(data)
-            data_collector.append(data)
-            data_collector.append(data)
-            data_collector.append(data)
-            data_collector.append(data)
-            data_collector.append(data)
+            # data_collector.append(data)
+            # data_collector.append(data)
+            # data_collector.append(data)
+            # data_collector.append(data)
+            # data_collector.append(data)
 
         json_file = self.dataset_path
 
